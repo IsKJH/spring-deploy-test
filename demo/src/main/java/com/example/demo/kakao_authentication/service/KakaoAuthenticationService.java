@@ -1,9 +1,9 @@
 package com.example.demo.kakao_authentication.service;
 
-import java.util.Map;
+import com.example.demo.kakao_authentication.controller.response.KakaoUserInfoResponse;
+import org.springframework.http.ResponseEntity;
+
 
 public interface KakaoAuthenticationService {
-    String getAccessCode();
-    Map<String, Object> getAccessToken(String code);
-    Map<String, Object> getUserInfo(String token);
+    ResponseEntity<KakaoUserInfoResponse> handleLogin(String code);
 }
