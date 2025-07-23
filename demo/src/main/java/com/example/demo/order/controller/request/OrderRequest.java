@@ -1,4 +1,4 @@
-package com.example.demo.account.controller.request;
+package com.example.demo.order.controller.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RegisterRequest {
-    private String email;
-    private String nickname;
+public class OrderRequest {
+    private Long quantity;
+    private boolean isReserved;
+    private Long breadId;
 }

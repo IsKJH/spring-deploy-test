@@ -57,10 +57,15 @@ public class KakaoAuthenticationServiceImpl implements KakaoAuthenticationServic
                 }
 
                 Optional<Account> existAccount = accountRepository.findByEmail(email);
-                log.info("Exist account: {}", existAccount);
                 if (existAccount.isPresent()) {
+                    Long accountId = existAccount.get().getId();
+                    String userToken = UUID.randomUUID().toString();
+
+                    redisCacheService.setKeyAndValue(userToken, accountId);
+                    redisCacheService.setKeyAndValue(accountId, tempToken);
+                    redisCacheService.deleteByKey(tempToken);
                     return ResponseEntity.ok(
-                            KakaoUserInfoResponse.from(token, tempToken, nickname, email, false));
+                            KakaoUserInfoResponse.from(token, userToken, nickname, email, false));
                 }
                 return ResponseEntity.ok(
                         KakaoUserInfoResponse.from(token, tempToken, nickname, email, true));

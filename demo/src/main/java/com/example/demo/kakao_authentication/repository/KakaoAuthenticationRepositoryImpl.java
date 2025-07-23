@@ -2,14 +2,12 @@ package com.example.demo.kakao_authentication.repository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.stereotype.Repository;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-@Repository
 public class KakaoAuthenticationRepositoryImpl implements KakaoAuthenticationRepository {
 
     private final String grantType = "authorization_code";

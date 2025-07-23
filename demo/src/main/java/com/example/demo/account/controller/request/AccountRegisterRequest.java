@@ -1,6 +1,5 @@
-package com.example.demo.account.controller.response;
+package com.example.demo.account.controller.request;
 
-import com.example.demo.kakao_authentication.controller.response.KakaoUserInfoResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,9 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RegisterResponse {
-    private Long id;
+public class AccountRegisterRequest {
     private String email;
     private String nickname;
-    private String userToken;
 }

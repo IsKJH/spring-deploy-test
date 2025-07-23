@@ -28,6 +28,4 @@ public class Bread {
     @ManyToOne
     @JoinColumn(name = "account_id")
     private Account accountId;
-
-
 }
