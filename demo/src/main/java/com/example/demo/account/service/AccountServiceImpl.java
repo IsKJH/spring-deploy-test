@@ -1,6 +1,6 @@
 package com.example.demo.account.service;
 
-import com.example.demo.api.ApiResponse;
+import com.example.demo.response.ApiResponse;
 import com.example.demo.account.controller.request.AccountRegisterRequest;
 import com.example.demo.account.controller.response.AccountRegisterResponse;
 import com.example.demo.account.entity.Account;

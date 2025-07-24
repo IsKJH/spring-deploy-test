@@ -1,8 +1,6 @@
 package com.example.demo.bread.controller.response;
 
 import com.example.demo.bread.entity.enums.Sort;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BreadRegisterResponse {
+public class BreadResponse {
     private Long id;
     private String name;
     private Sort sort;

@@ -1,6 +1,6 @@
-package com.example.demo.kakao_authentication.service;
+package com.example.demo.kakaoAuthentication.service;
 
-import com.example.demo.kakao_authentication.controller.response.KakaoUserInfoResponse;
+import com.example.demo.kakaoAuthentication.controller.response.KakaoUserInfoResponse;
 import org.springframework.http.ResponseEntity;
 
 

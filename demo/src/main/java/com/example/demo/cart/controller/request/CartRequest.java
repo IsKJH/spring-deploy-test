@@ -1,4 +1,4 @@
-package com.example.demo.order.controller.request;
+package com.example.demo.cart.controller.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderRequest {
-    private Long breadId;
+public class CartRequest {
     private Long quantity;
-    private boolean isReserved;
+    private Long breadId;
 }

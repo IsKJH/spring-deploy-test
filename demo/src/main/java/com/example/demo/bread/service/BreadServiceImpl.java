@@ -1,35 +1,48 @@
 package com.example.demo.bread.service;
 
-import com.example.demo.api.ApiResponse;
+import com.example.demo.bread.controller.response.BreadResponse;
+import com.example.demo.response.ApiResponse;
 import com.example.demo.account.entity.Account;
 import com.example.demo.account.repository.AccountRepository;
 import com.example.demo.bread.controller.request.BreadRegisterRequest;
-import com.example.demo.bread.controller.response.BreadRegisterResponse;
 import com.example.demo.bread.entity.Bread;
 import com.example.demo.bread.repository.BreadRepository;
-import com.example.demo.redis_cache.service.RedisCacheService;
+import com.example.demo.utils.CheckToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 @Transactional
 public class BreadServiceImpl implements BreadService {
     private final BreadRepository breadRepository;
-    private final RedisCacheService redisCacheService;
     private final AccountRepository accountRepository;
+    private final CheckToken checkToken;
 
     @Override
-    public ApiResponse<BreadRegisterResponse> register(String token, BreadRegisterRequest request) {
-        String userToken = token.replace("Bearer ", "");
-        String accountIdStr = redisCacheService.getValueByKey(userToken, String.class);
+    @Transactional(readOnly = true)
+    public ApiResponse<List<BreadResponse>> getAllBreads() {
+        List<Bread> breads = breadRepository.findAll();
+        List<BreadResponse> response = breads.stream()
+                .map(bread -> BreadResponse.builder()
+                        .id(bread.getId())
+                        .name(bread.getName())
+                        .origin(bread.getOrigin())
+                        .price(bread.getPrice())
+                        .description(bread.getDescription())
+                        .quantity(bread.getQuantity())
+                        .accountId(bread.getAccount().getId())
+                        .build()).toList();
+        return ApiResponse.success(response);
+    }
 
-        if (accountIdStr == null || accountIdStr.isEmpty()) {
-            return ApiResponse.failure("토큰이 올바르지 않습니다.");
-        }
+    @Override
+    public ApiResponse<BreadResponse> register(String token, BreadRegisterRequest request) {
 
-        long accountId = Long.parseLong(accountIdStr);
+        long accountId = Long.parseLong(checkToken.findAccountId(token));
 
         Account account = accountRepository.findById(accountId).orElseThrow(
                 () -> new RuntimeException("계정을 찾을 수 없습니다."));
@@ -42,11 +55,11 @@ public class BreadServiceImpl implements BreadService {
                         .quantity(request.getQuantity())
                         .description(request.getDescription())
                         .origin(request.getOrigin())
-                        .accountId(account)
+                        .account(account)
                         .build()
         );
 
-        BreadRegisterResponse response = BreadRegisterResponse.builder()
+        BreadResponse response = BreadResponse.builder()
                 .id(savedBread.getId())
                 .name(savedBread.getName())
                 .sort(savedBread.getSort())

@@ -1,7 +1,7 @@
-package com.example.demo.kakao_authentication.controller;
+package com.example.demo.kakaoAuthentication.controller;
 
-import com.example.demo.kakao_authentication.controller.response.KakaoUserInfoResponse;
-import com.example.demo.kakao_authentication.service.KakaoAuthenticationService;
+import com.example.demo.kakaoAuthentication.controller.response.KakaoUserInfoResponse;
+import com.example.demo.kakaoAuthentication.service.KakaoAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,5 @@
-package com.example.demo.kakao_authentication.controller.response;
+package com.example.demo.kakaoAuthentication.controller.response;
 
-import com.example.demo.account.entity.Account;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

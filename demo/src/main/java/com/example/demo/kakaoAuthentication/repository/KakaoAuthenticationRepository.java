@@ -1,4 +1,4 @@
-package com.example.demo.kakao_authentication.repository;
+package com.example.demo.kakaoAuthentication.repository;
 
 import java.util.Map;
 

@@ -1,9 +1,12 @@
 package com.example.demo.bread.service;
 
-import com.example.demo.api.ApiResponse;
+import com.example.demo.bread.controller.response.BreadResponse;
+import com.example.demo.response.ApiResponse;
 import com.example.demo.bread.controller.request.BreadRegisterRequest;
-import com.example.demo.bread.controller.response.BreadRegisterResponse;
+
+import java.util.List;
 
 public interface BreadService {
-    ApiResponse<BreadRegisterResponse> register(String token, BreadRegisterRequest request);
+    ApiResponse<List<BreadResponse>> getAllBreads();
+    ApiResponse<BreadResponse> register(String token, BreadRegisterRequest request);
 }

@@ -1,9 +1,9 @@
-package com.example.demo.kakao_authentication.service;
+package com.example.demo.kakaoAuthentication.service;
 
 import com.example.demo.account.entity.Account;
 import com.example.demo.account.repository.AccountRepository;
-import com.example.demo.kakao_authentication.controller.response.KakaoUserInfoResponse;
-import com.example.demo.kakao_authentication.repository.KakaoAuthenticationRepository;
+import com.example.demo.kakaoAuthentication.controller.response.KakaoUserInfoResponse;
+import com.example.demo.kakaoAuthentication.repository.KakaoAuthenticationRepository;
 import com.example.demo.redis_cache.service.RedisCacheService;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
