@@ -12,8 +12,18 @@ import org.springframework.web.bind.annotation.*;
 public class KakaoAuthenticationController {
     private final KakaoAuthenticationService kakaoAuthenticationService;
 
+    @GetMapping("/url")
+    public ResponseEntity<String> loginUrl() {
+        return kakaoAuthenticationService.getLoginUrl();
+    }
+
     @GetMapping("/login")
     public ResponseEntity<KakaoUserInfoResponse> kakaoLogin(@RequestParam(value = "code", required = false) String code) {
         return kakaoAuthenticationService.handleLogin(code);
+    }
+
+    @GetMapping("/front-login")
+    public ResponseEntity<String> kakaoFrontLogin(@RequestParam(value = "code", required = false) String code) {
+        return kakaoAuthenticationService.handleFrontLogin(code);
     }
 }

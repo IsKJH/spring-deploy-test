@@ -5,5 +5,7 @@ import org.springframework.http.ResponseEntity;
 
 
 public interface KakaoAuthenticationService {
+    ResponseEntity<String> getLoginUrl();
     ResponseEntity<KakaoUserInfoResponse> handleLogin(String code);
+    ResponseEntity<String> handleFrontLogin(String code);
 }
