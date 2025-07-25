@@ -66,4 +66,13 @@ github:
   token-request-uri: ${GITHUB_TOKEN_REQUEST_URI}
   user-info-request-uri: ${GITHUB_USER_INFO_REQUEST_URI}
 
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID}
+    secret: ${NAVER_CLIENT_SECRET}
+
+kakao:
+  map:
+    api-key: ${KAKAO_MAP_API_KEY}
+
 debug: true
