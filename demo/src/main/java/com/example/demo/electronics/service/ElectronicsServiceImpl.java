@@ -10,9 +10,11 @@ import com.example.demo.response.ApiResponse;
 import com.example.demo.utils.CheckToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ElectronicsServiceImpl implements ElectronicsService {
     private final ElectronicsRepository electronicsRepository;
     private final CompanyRepository companyRepository;

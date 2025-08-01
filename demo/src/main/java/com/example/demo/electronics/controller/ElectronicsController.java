@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/electronics")
-@Transactional
 public class ElectronicsController {
     private final ElectronicsService electronicsService;
 
