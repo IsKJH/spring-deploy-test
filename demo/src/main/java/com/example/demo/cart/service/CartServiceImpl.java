@@ -58,7 +58,7 @@ public class CartServiceImpl implements CartService {
         Long accountId = Long.parseLong(checkToken.findAccountId(token));
 
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new RuntimeException("계정을 찾을 수 없습니다."));
-        long breadId = request.getBreadId();
+        Long breadId = request.getBreadId();
         Bread bread = breadRepository.findById(breadId).orElseThrow(() -> new RuntimeException("빵을 찾을 수 없습니다."));
 
         Cart cart = cartRepository.findByAccountIdWithItems(accountId)

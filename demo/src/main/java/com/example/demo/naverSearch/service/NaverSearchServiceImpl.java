@@ -27,9 +27,6 @@ public class NaverSearchServiceImpl implements NaverSearchService {
     @Value("${naver.client.secret}")
     private String naverClientSecret;
 
-    @Value("${kakao.map.api-key}")
-    private String kakaoMapApiKey;
-
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -83,16 +80,39 @@ public class NaverSearchServiceImpl implements NaverSearchService {
     @Override
     public Object geocodeAddress(String address) {
         try {
-            log.info("카카오 지도 API를 사용한 주소 검색 - 주소: {}", address);
+            log.info("주소 좌표 변환 시작 - 주소: {}", address);
             
-            // 카카오 지도 API로 주소 검색
-            String url = "https://dapi.kakao.com/v2/local/search/address.json" +
-                    "?query=" + address;
+            // 1차: 네이버 Geocoding API 시도
+            try {
+                return geocodeAddressWithGeocodeAPI(address);
+            } catch (Exception e) {
+                log.warn("Geocoding API 실패, 검색 API로 대체 시도: {}", e.getMessage());
+                
+                // 2차: 네이버 검색 API로 대체
+                return geocodeAddressWithNaver(address);
+            }
             
-            log.info("카카오 지도 API 요청 URL: {}", url);
+        } catch (Exception e) {
+            log.error("주소 좌표 변환 실패: ", e);
+            throw new RuntimeException("주소 좌표 변환 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 네이버 Geocoding API를 사용한 주소 좌표 변환 (1차 시도)
+     */
+    private Object geocodeAddressWithGeocodeAPI(String address) {
+        try {
+            log.info("네이버 Geocoding API 호출 - 주소: {}", address);
+            
+            String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+            String url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=" + encodedAddress;
+            
+            log.info("Geocoding API URL: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "KakaoAK " + kakaoMapApiKey);
+            headers.set("X-NCP-APIGW-API-KEY-ID", naverClientId);
+            headers.set("X-NCP-APIGW-API-KEY", naverClientSecret);
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setAcceptCharset(List.of(StandardCharsets.UTF_8));
 
@@ -105,80 +125,165 @@ public class NaverSearchServiceImpl implements NaverSearchService {
                     String.class
             );
 
-            log.info("카카오 지도 API 응답: {}", response.getBody());
+            log.info("Geocoding API 응답: {}", response.getBody());
             JsonNode result = objectMapper.readValue(response.getBody(), JsonNode.class);
-            JsonNode documents = result.get("documents");
             
-            if (documents != null && documents.size() > 0) {
-                JsonNode firstDoc = documents.get(0);
-                double lat = firstDoc.get("y").asDouble(); 
-                double lng = firstDoc.get("x").asDouble();
+            // 네이버 Geocoding API 응답 구조 확인
+            if (result.has("addresses") && result.get("addresses").size() > 0) {
+                JsonNode addresses = result.get("addresses");
+                JsonNode firstAddress = addresses.get(0);
                 
-                // 지오코딩 API 형식으로 응답 구성 (기존 코드와 호환)
+                // 좌표 추출 (Geocoding API는 이미 정확한 형태로 제공)
+                String x = firstAddress.get("x").asText(); // 경도
+                String y = firstAddress.get("y").asText(); // 위도
+                
                 Map<String, Object> geocodeResponse = Map.of(
                     "status", "OK",
-                    "meta", Map.of("totalCount", 1),
+                    "meta", Map.of("totalCount", addresses.size()),
                     "addresses", List.of(Map.of(
-                        "roadAddress", firstDoc.has("road_address") && !firstDoc.get("road_address").isNull() 
-                            ? firstDoc.get("road_address").get("address_name").asText() : "",
-                        "jibunAddress", firstDoc.get("address_name").asText(),
-                        "x", String.valueOf(lng),
-                        "y", String.valueOf(lat)
+                        "roadAddress", firstAddress.has("roadAddress") ? firstAddress.get("roadAddress").asText() : "",
+                        "jibunAddress", firstAddress.has("jibunAddress") ? firstAddress.get("jibunAddress").asText() : "",
+                        "x", x,
+                        "y", y
                     ))
                 );
                 
-                log.info("카카오 API로 변환된 좌표: {} -> ({}, {})", address, lat, lng);
+                log.info("Geocoding API로 변환된 좌표: {} -> ({}, {})", address, y, x);
                 return objectMapper.valueToTree(geocodeResponse);
+                
             } else {
-                throw new RuntimeException("카카오 지도에서 주소를 찾을 수 없습니다: " + address);
+                throw new RuntimeException("Geocoding API에서 주소를 찾을 수 없습니다: " + address);
             }
 
         } catch (Exception e) {
-            log.error("카카오 지도 API 주소 변환 실패: ", e);
-            
-            // 카카오 API 실패 시 네이버 검색으로 대체
-            log.info("카카오 API 실패, 네이버 검색으로 대체 시도");
-            return geocodeAddressWithNaver(address);
+            log.error("네이버 Geocoding API 호출 실패: ", e);
+            throw new RuntimeException("Geocoding API 호출 실패: " + e.getMessage());
         }
     }
 
     /**
-     * 네이버 검색 API를 사용한 주소 좌표 변환 (백업용)
+     * 네이버 검색 API를 사용한 주소 좌표 변환 (2차 백업용)
      */
     private Object geocodeAddressWithNaver(String address) {
         try {
             log.info("네이버 검색을 통한 주소 좌표 변환 - 주소: {}", address);
             
-            Object searchResult = searchLocalPlaces(address, null, null);
-            JsonNode result = objectMapper.valueToTree(searchResult);
+            // 다양한 검색어로 시도
+            String[] searchQueries = {
+                address,                           // 원본 주소
+                address.replaceAll("길 \\d+", "길"), // 번지 제거
+                extractMainAddress(address),        // 주요 주소만 추출
+                extractDistrictAndRoad(address)     // 구와 도로명만 추출
+            };
             
-            JsonNode items = result.get("items");
-            if (items != null && items.size() > 0) {
-                JsonNode firstItem = items.get(0);
-                double lat = Integer.parseInt(firstItem.get("mapy").asText()) / 10000000.0;
-                double lng = Integer.parseInt(firstItem.get("mapx").asText()) / 10000000.0;
+            for (String query : searchQueries) {
+                if (query == null || query.trim().isEmpty()) continue;
                 
-                Map<String, Object> geocodeResponse = Map.of(
-                    "status", "OK",
-                    "meta", Map.of("totalCount", 1),
-                    "addresses", List.of(Map.of(
-                        "roadAddress", firstItem.get("roadAddress").asText(),
-                        "jibunAddress", firstItem.get("address").asText(),
-                        "x", String.valueOf(lng),
-                        "y", String.valueOf(lat)
-                    ))
-                );
+                log.info("검색 시도: {}", query);
                 
-                log.info("네이버 검색으로 변환된 좌표: {} -> ({}, {})", address, lat, lng);
-                return objectMapper.valueToTree(geocodeResponse);
-            } else {
-                throw new RuntimeException("주소를 찾을 수 없습니다: " + address);
+                try {
+                    Object searchResult = searchLocalPlaces(query, null, null);
+                    JsonNode result = objectMapper.valueToTree(searchResult);
+                    
+                    JsonNode items = result.get("items");
+                    if (items != null && items.size() > 0) {
+                        JsonNode firstItem = items.get(0);
+                        
+                        // 검색 결과가 원본 주소와 유사한지 확인
+                        String foundAddress = firstItem.has("address") ? firstItem.get("address").asText() : "";
+                        String foundRoadAddress = firstItem.has("roadAddress") ? firstItem.get("roadAddress").asText() : "";
+                        
+                        if (isAddressMatch(address, foundAddress, foundRoadAddress)) {
+                            double lat = Integer.parseInt(firstItem.get("mapy").asText()) / 10000000.0;
+                            double lng = Integer.parseInt(firstItem.get("mapx").asText()) / 10000000.0;
+                            
+                            Map<String, Object> geocodeResponse = Map.of(
+                                "status", "OK",
+                                "meta", Map.of("totalCount", 1),
+                                "addresses", List.of(Map.of(
+                                    "roadAddress", foundRoadAddress,
+                                    "jibunAddress", foundAddress,
+                                    "x", String.valueOf(lng),
+                                    "y", String.valueOf(lat)
+                                ))
+                            );
+                            
+                            log.info("네이버 검색으로 변환된 좌표: {} -> ({}, {}) [검색어: {}]", address, lat, lng, query);
+                            return objectMapper.valueToTree(geocodeResponse);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("검색어 '{}' 실패: {}", query, e.getMessage());
+                }
             }
+            
+            throw new RuntimeException("주소를 찾을 수 없습니다: " + address);
 
         } catch (Exception e) {
             log.error("네이버 주소 좌표 변환도 실패: ", e);
             throw new RuntimeException("주소 좌표 변환 실패: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 주소에서 주요 부분만 추출 (건물번호 등 제거)
+     */
+    private String extractMainAddress(String address) {
+        if (address == null) return null;
+        
+        // "서울특별시 중구 퇴계로8길 46" -> "서울특별시 중구 퇴계로8길"
+        return address.replaceAll("\\s+\\d+(-\\d+)?$", "").trim();
+    }
+    
+    /**
+     * 구와 도로명만 추출
+     */
+    private String extractDistrictAndRoad(String address) {
+        if (address == null) return null;
+        
+        // "서울특별시 중구 퇴계로8길 46" -> "중구 퇴계로8길"
+        String[] parts = address.split("\\s+");
+        StringBuilder result = new StringBuilder();
+        
+        for (String part : parts) {
+            if (part.contains("구") || part.contains("로") || part.contains("길")) {
+                if (result.length() > 0) result.append(" ");
+                result.append(part);
+            }
+        }
+        
+        return result.toString().trim();
+    }
+    
+    /**
+     * 검색된 주소가 원본 주소와 매칭되는지 확인
+     */
+    private boolean isAddressMatch(String originalAddress, String foundAddress, String foundRoadAddress) {
+        if (originalAddress == null) return false;
+        
+        String original = originalAddress.toLowerCase().replaceAll("\\s+", "");
+        String found1 = foundAddress != null ? foundAddress.toLowerCase().replaceAll("\\s+", "") : "";
+        String found2 = foundRoadAddress != null ? foundRoadAddress.toLowerCase().replaceAll("\\s+", "") : "";
+        
+        // 주요 키워드가 포함되어 있는지 확인
+        String[] keywords = extractKeywords(original);
+        
+        for (String keyword : keywords) {
+            if (keyword.length() > 2) { // 2글자 이상 키워드만
+                if (found1.contains(keyword) || found2.contains(keyword)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 주소에서 키워드 추출
+     */
+    private String[] extractKeywords(String address) {
+        return address.split("[시군구동로길\\s]+");
     }
 
     @Override
@@ -488,4 +593,5 @@ public class NaverSearchServiceImpl implements NaverSearchService {
             return "서울";
         }
     }
+
 }

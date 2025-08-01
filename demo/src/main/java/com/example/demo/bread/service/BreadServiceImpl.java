@@ -42,7 +42,7 @@ public class BreadServiceImpl implements BreadService {
     @Override
     public ApiResponse<BreadResponse> register(String token, BreadRegisterRequest request) {
 
-        long accountId = Long.parseLong(checkToken.findAccountId(token));
+        Long accountId = Long.parseLong(checkToken.findAccountId(token));
 
         Account account = accountRepository.findById(accountId).orElseThrow(
                 () -> new RuntimeException("계정을 찾을 수 없습니다."));

@@ -70,4 +70,5 @@ public class NaverSearchController {
                 .body(ApiResponse.failure("근처 장소 검색 실패: " + e.getMessage()));
         }
     }
+
 }
