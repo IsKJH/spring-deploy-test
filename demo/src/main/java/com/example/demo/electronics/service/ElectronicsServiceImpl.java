@@ -28,7 +28,7 @@ public class ElectronicsServiceImpl implements ElectronicsService {
 
         Electronics savedElectronics = electronicsRepository.save(Electronics.builder().name(request.getName()).price(request.getPrice()).company(company).build());
 
-        ElectronicsResponse response = ElectronicsResponse.builder().id(savedElectronics.getId()).name(savedElectronics.getName()).price(savedElectronics.getPrice()).companyId(savedElectronics.getCompany().getId()).build();
+        ElectronicsResponse response = ElectronicsResponse.builder().id(savedElectronics.getId()).name(savedElectronics.getName()).price(savedElectronics.getPrice()).companyName(savedElectronics.getCompany().getName()).companyId(savedElectronics.getCompany().getId()).build();
 
         return ApiResponse.success(response);
     }
