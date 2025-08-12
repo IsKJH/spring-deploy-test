@@ -1,17 +1,17 @@
 name: Deploy
-
 on:
   push:
     branches:
       - main
-
 env:
   DOCKER_IMAGE: ghcr.io/${{ secrets.actor }}/spring-backend:latest
-
 jobs:
   build:
     name: build-app
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./demo
     steps:
       ## jdk setting
       - uses: actions/checkout@v3
@@ -19,18 +19,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'zulu' # https://github.com/actions/setup-java
-
-      ## gradle caching
-      # - name: Gradle Caching
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: |
-      #       ~/.gradle/caches
-      #       ~/.gradle/wrapper
-      #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-gradle-
+          distribution: 'zulu'
         
       - name: Create application.yaml for CD Deploy
         run: |
@@ -38,19 +27,20 @@ jobs:
           
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
+        
       ## gradle build
       - name: Build with Gradle
         run: |
           ls
           ./gradlew clean build -x test
-
+          
       ## docker build & push to production
       - name: Docker build & push to prod
+        working-directory: .
         run: |
           docker login ghcr.io -u ${{ secrets.actor }} -p ${{ secrets.GHCR_TOKEN }}
           docker buildx create --name arm64builder --use
-          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t ghcr.io/${{ secrets.actor }}/spring-backend:latest --push .
+          docker buildx build --platform linux/amd64,linux/arm64 -f demo/Dockerfile -t ghcr.io/${{ secrets.actor }}/spring-backend:latest --push .
           docker logout
           
   deploy:
@@ -68,11 +58,8 @@ jobs:
         script: |
           cd /home/ec2-user/spring-deploy-test
           docker-compose down
-
           echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.actor }} --password-stdin
           docker pull ${{ env.DOCKER_IMAGE }}
-
           docker image prune -f
           docker logout
-
           docker-compose up -d
