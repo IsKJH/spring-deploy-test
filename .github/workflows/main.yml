@@ -48,14 +48,9 @@ jobs:
     name: Deploy
     runs-on: [ self-hosted, deploy-spring-test ]
     steps:
-    - name: Deploy to Production
-      uses: appleboy/ssh-action@v1
-      with:
-        host: ${{ secrets.HOST_IP }}
-        username: ec2-user
-        key: ${{ secrets.PRIVATE_KEY }}
-        port: 22
-        script: |
+      - name: Deploy to Production
+        run: |
+          echo "Starting Backend Production Deployment"
           cd /home/ec2-user/spring-deploy-test
           docker-compose down
           echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.actor }} --password-stdin
